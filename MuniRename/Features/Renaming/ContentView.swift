@@ -659,15 +659,17 @@ struct ContentView: View {
         HSplitView {
             paneSurface {
                 rulesPane
-                    .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
-                    .layoutPriority(1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(minWidth: 420, idealWidth: 560, maxWidth: 760, maxHeight: .infinity)
+            .layoutPriority(0)
 
             paneSurface {
                 fileTable
-                    .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
-                    .layoutPriority(0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(minWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(1)
         }
         .padding(.horizontal, 10)
         .padding(.bottom, 10)
@@ -687,52 +689,23 @@ struct ContentView: View {
             .muniSurface(cornerRadius: 14, fill: MuniTheme.paneFill, stroke: MuniTheme.paneStroke)
     }
 
-    // Panneau règles (2 colonnes si place suffisante)
+    // Panneau règles (colonne unique, comme BRU)
     private var rulesPane: some View {
-        GeometryReader { geo in
-            ScrollView {
-                let w = geo.size.width - 24
-                let leftMin:  CGFloat = 420
-                let rightMin: CGFloat = 560
-                let gap: CGFloat = 12
-                let twoCols = w >= (leftMin + rightMin + gap)
-
-                if twoCols {
-                    HStack(alignment: .top, spacing: gap) {
-                        leftRulesColumn
-                            .frame(minWidth: leftMin,  maxWidth: .infinity, alignment: .topLeading)
-                            .padding(.trailing, 4)
-                        rightRulesColumn
-                            .frame(minWidth: rightMin, maxWidth: .infinity, alignment: .topLeading)
-                            .padding(.leading, 4)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 10)
-                } else {
-                    VStack(alignment: .leading, spacing: gap) {
-                        leftRulesColumn
-                        rightRulesColumn
-                    }
-                    .padding(10)
-                }
-            }
-            .clipped()
-            .modifier(PreviewRecomputeModifier(vm: vm))
+        ScrollView {
+            rulesColumn
+                .padding(10)
         }
+        .clipped()
+        .modifier(PreviewRecomputeModifier(vm: vm))
     }
 
-    private var leftRulesColumn: some View {
+    private var rulesColumn: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionCard(title: "(1) Remplacer",   active: vm.replace.enabled) { replaceView }
             SectionCard(title: "(2) Retirer",      active: vm.remove.enabled)  { removeView }
             SectionCard(title: "(3) Ajouter",      active: vm.add.enabled)     { addView }
             SectionCard(title: "(4) Date auto",    active: vm.date.enabled)    { dateView }
             SectionCard(title: "(5) Numérotation", active: vm.num.enabled)     { numberingView }
-        }
-    }
-
-    private var rightRulesColumn: some View {
-        VStack(alignment: .leading, spacing: 10) {
             SectionCard(title: "(6) Casse",          active: vm.casing.enabled)     { caseView }
             SectionCard(title: "(7) Extension",      active: vm.ext.enabled)        { extView }
             SectionCard(title: "(8) Dossier parent", active: vm.folder.enabled)     { folderView }
