@@ -499,23 +499,27 @@ struct SectionCard<Content: View>: View {
                                                 : Color.secondary.opacity(0.35), lineWidth: 0.9)
                     )
             }
-            Divider()
+            Divider().overlay(MuniTheme.divider)
             content
         }
-        .padding(12)
+        .padding(13)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(active ? Color.accentColor.opacity(0.06)
-                             : Color(nsColor: .controlBackgroundColor))
+                .fill(active ? MuniTheme.sectionActiveFill : MuniTheme.sectionInactiveFill)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(active ? Color.accentColor.opacity(0.75)
-                               : Color.secondary.opacity(0.35),
-                        lineWidth: active ? 1.2 : 1)
+                .stroke(active ? MuniTheme.sectionActiveStroke : MuniTheme.sectionInactiveStroke,
+                        lineWidth: active ? 1.4 : 1)
         )
-        .shadow(color: .black.opacity(active ? 0.12 : 0.06),
-                radius: active ? 6 : 3, x: 0, y: active ? 3 : 1)
+        .overlay(alignment: .top) {
+            Capsule()
+                .fill(active ? Color.accentColor.opacity(0.9) : Color.clear)
+                .frame(height: 3)
+                .padding(.horizontal, 10)
+        }
+        .shadow(color: .black.opacity(active ? 0.10 : 0.05),
+                radius: active ? 7 : 3, x: 0, y: active ? 3 : 1)
         .frame(maxWidth: .infinity, alignment: .leading)
         .clipped()
     }
@@ -533,14 +537,13 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             toolbar
-            Divider()
             mainLayout
             if let report = vm.lastRunReport {
-                Divider()
                 reportBanner(report)
             }
         }
         .frame(minWidth: 900, minHeight: 560)
+        .background(MuniTheme.windowBackground)
         // Appliquer un preset choisi dans la fenêtre “Presets”
         .onReceive(presetStore.$presetToApply.compactMap { $0 }) { p in
             vm.apply(preset: p)
@@ -606,9 +609,18 @@ struct ContentView: View {
             Button("Voir le rapport") { showRunReport = true }
                 .buttonStyle(.link)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(hasErrors ? Color.orange.opacity(0.12) : Color.green.opacity(0.12))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(hasErrors ? Color.orange.opacity(0.12) : Color.green.opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(hasErrors ? Color.orange.opacity(0.35) : Color.green.opacity(0.35), lineWidth: 1)
+        )
+        .padding(.horizontal, 10)
+        .padding(.bottom, 10)
     }
 
     private var runReportText: String {
@@ -645,14 +657,20 @@ struct ContentView: View {
     // SplitView
     private var mainLayout: some View {
         HSplitView {
-            rulesPane
-                .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
-                .layoutPriority(1)
+            paneSurface {
+                rulesPane
+                    .frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
+                    .layoutPriority(1)
+            }
 
-            fileTable
-                .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
-                .layoutPriority(0)
+            paneSurface {
+                fileTable
+                    .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
+                    .layoutPriority(0)
+            }
         }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 10)
         .overlay(alignment: .center) {
             if vm.isLoading {
                 ProgressView("Chargement…")
@@ -661,6 +679,12 @@ struct ContentView: View {
                     .cornerRadius(12)
             }
         }
+    }
+
+    private func paneSurface<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(8)
+            .muniSurface(cornerRadius: 14, fill: MuniTheme.paneFill, stroke: MuniTheme.paneStroke)
     }
 
     // Panneau règles (2 colonnes si place suffisante)
@@ -726,58 +750,115 @@ struct ContentView: View {
 
     // Toolbar
     var toolbar: some View {
-        HStack(spacing: 12) {
-            Button { vm.pickFolder() } label: { Label("Choisir un dossier", systemImage: "folder") }
-            if let d = vm.directoryURL {
-                Text(d.path)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            Spacer()
-            if !vm.entries.isEmpty {
-                Text("Sélection : \(vm.selection.count) / \(vm.entries.count)")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-
-                Button("Tout sélectionner") {
-                    vm.selection = Set(vm.entries.map { $0.id })
+        VStack(spacing: 10) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("MuniRename")
+                        .font(.title3.weight(.semibold))
+                    Text("Renommage en lot manuel")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                Button("Effacer la sélection") {
-                    vm.selection.removeAll()
+                Spacer()
+                HStack(spacing: 8) {
+                    headerBadge("Fichiers", value: "\(vm.entries.count)")
+                    headerBadge("Sélection", value: "\(vm.selection.count)")
+                    headerBadge("État", value: vm.isLoading ? "Chargement" : "Prêt", isAccent: vm.isLoading)
                 }
-
-                Toggle("Prévisualiser uniquement la sélection",
-                       isOn: $vm.previewOnlySelection)
-                    .toggleStyle(.checkbox)
-
-                Divider().frame(height: 18)
             }
-            Button { vm.loadEntries() } label: { Label("Rafraîchir", systemImage: "arrow.clockwise") }
+
+            HStack(spacing: 8) {
+                Button { vm.pickFolder() } label: {
+                    Label("Choisir un dossier", systemImage: "folder")
+                }
+                if let d = vm.directoryURL {
+                    Text(d.path)
+                        .font(.callout.monospaced())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                } else {
+                    Text("Aucun dossier sélectionné")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button { vm.loadEntries() } label: {
+                    Label("Rafraîchir", systemImage: "arrow.clockwise")
+                }
                 .keyboardShortcut("r")
-
-            // Boutons presets
-            Button("Gestion des presets…") { openWindow(id: "presets") }
-            Button("Importer preset…") { presetStore.importSingle() }
-            Button("Sauver preset courant…") {
-                var p = vm.currentPreset
-                p.formatVersion = RenamePreset.currentFormatVersion
-                p.name = "Preset depuis la fenêtre"
-                presetStore.items.append(p)
-                presetStore.save()
             }
 
-            Divider().frame(height: 18)
-            Button { showSimulation = true } label: { Label("Simulation", systemImage: "doc.text.magnifyingglass") }
-            Button { showRunReport = vm.lastRunReport != nil } label: { Label("Dernier rapport", systemImage: "list.bullet.clipboard") }
-                .disabled(vm.lastRunReport == nil)
-            Button { showApplyConfirmation = true } label: { Label("Appliquer", systemImage: "hammer") }
-                .keyboardShortcut(.return)
-            Button { vm.undoLast() } label: { Label("Annuler", systemImage: "arrow.uturn.backward") }
-                .keyboardShortcut("z", modifiers: [.command, .shift])
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ControlGroup("Sélection") {
+                        Button("Tout") { vm.selection = Set(vm.entries.map { $0.id }) }
+                            .disabled(vm.entries.isEmpty)
+                        Button("Effacer") { vm.selection.removeAll() }
+                            .disabled(vm.selection.isEmpty)
+                    }
+
+                    Toggle("Aperçu seulement sélection", isOn: $vm.previewOnlySelection)
+                        .toggleStyle(.checkbox)
+                        .disabled(vm.entries.isEmpty)
+
+                    Menu {
+                        Button("Gestion des presets…") { openWindow(id: "presets") }
+                        Button("Importer preset…") { presetStore.importSingle() }
+                        Button("Sauver preset courant…") {
+                            var p = vm.currentPreset
+                            p.formatVersion = RenamePreset.currentFormatVersion
+                            p.name = "Preset depuis la fenêtre"
+                            presetStore.items.append(p)
+                            presetStore.save()
+                        }
+                    } label: {
+                        Label("Presets", systemImage: "square.stack.3d.up")
+                    }
+
+                    Divider().frame(height: 20)
+
+                    Button { showSimulation = true } label: {
+                        Label("Simulation", systemImage: "doc.text.magnifyingglass")
+                    }
+                    Button { showRunReport = vm.lastRunReport != nil } label: {
+                        Label("Rapport", systemImage: "list.bullet.clipboard")
+                    }
+                    .disabled(vm.lastRunReport == nil)
+                    Button { showApplyConfirmation = true } label: {
+                        Label("Appliquer", systemImage: "hammer")
+                    }
+                    .keyboardShortcut(.return)
+                    Button { vm.undoLast() } label: {
+                        Label("Annuler", systemImage: "arrow.uturn.backward")
+                    }
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
+                }
+                .padding(.horizontal, 2)
+            }
         }
-        .padding(8)
+        .padding(12)
+        .muniSurface(cornerRadius: 14, fill: MuniTheme.panelFill, stroke: MuniTheme.panelStroke)
+        .padding(.horizontal, 10)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+    }
+
+    private func headerBadge(_ title: String, value: String, isAccent: Bool = false) -> some View {
+        HStack(spacing: 6) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(isAccent ? Color.accentColor : .primary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(isAccent ? Color.accentColor.opacity(0.12) : Color.black.opacity(0.04))
+        )
     }
 
     private func tf(_ binding: Binding<String>, placeholder: String = "") -> some View {

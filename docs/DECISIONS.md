@@ -68,3 +68,31 @@ Decision:
 
 Pourquoi:
 - Respect du positionnement souhaite (type Bulk Rename Utility sur macOS, UX plus propre).
+
+## D6 - Base de style UI commune (MuniTheme)
+
+Decision:
+- Introduire `MuniTheme` (`MuniRename/Shared/UI/MuniTheme.swift`) pour centraliser:
+  - couleurs de surfaces,
+  - gradient de fenetre,
+  - styles de separateurs.
+- Appliquer cette base sur `ContentView` (header, split panes, section cards).
+
+Pourquoi:
+- Eviter les styles "en dur" disperses.
+- Preparer une convergence visuelle avec MuniConvert via des tokens partages.
+
+Trade-off:
+- Ce n'est pas encore un package partage entre repos; extraction inter-projets a faire ensuite.
+
+## D7 - Lancement debug robuste hors Xcode UI
+
+Decision:
+- Ajouter `scripts/open_debug_app.sh` pour:
+  - builder via `scripts/xcode_build.sh`,
+  - trouver le vrai bundle Debug en excluant `Index.noindex`,
+  - verifier la presence d'un executable avant `open`.
+
+Pourquoi:
+- Evite l'erreur "The application cannot be opened because its executable is missing."
+- Rend le test local reproductible via terminal.

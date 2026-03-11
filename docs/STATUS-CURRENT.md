@@ -27,6 +27,12 @@ Pour éviter toute ambiguïté d'environnement, utiliser:
 
 Le script force automatiquement `DEVELOPER_DIR` vers Xcode complet si disponible.
 
+Pour builder puis lancer la bonne app Debug (en evitant le faux bundle `Index.noindex`):
+
+```bash
+./scripts/open_debug_app.sh
+```
+
 ## Qualité actuelle
 
 - Build app Xcode: OK

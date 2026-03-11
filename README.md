@@ -42,6 +42,7 @@ Le projet est sous licence GNU GPL v3.0.
 - `Sources/munirename-smoketests/` smoke-tests exécutables.
 - `docs/` audit, décisions, presets, branding, status initial.
 - `scripts/xcode_build.sh` build app macOS avec Xcode.
+- `scripts/open_debug_app.sh` build + lancement fiable de l'app Debug.
 - `scripts/generate_appicon.sh` génération des assets AppIcon.
 
 ## Installation / Build
@@ -61,6 +62,19 @@ Build CLI Xcode reproductible (utile si `xcode-select` pointe sur CommandLineToo
 
 ```bash
 ./scripts/xcode_build.sh
+```
+
+Lancer l'app compilée (sans tomber sur le faux bundle `Index.noindex`):
+
+```bash
+./scripts/open_debug_app.sh
+```
+
+Alternative manuelle:
+
+```bash
+APP_PATH="$(find ~/Library/Developer/Xcode/DerivedData -path '*MuniRename*/Build/Products/Debug/MuniRename.app' -not -path '*/Index.noindex/*' | head -n 1)"
+open "$APP_PATH"
 ```
 
 ## Option B — Sans Xcode complet (CLI + core)
