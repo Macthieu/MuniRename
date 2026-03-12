@@ -481,47 +481,25 @@ struct SectionCard<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(title).font(.subheadline.weight(.semibold))
-                Spacer()
-                Label(active ? "Actif" : "Inactif",
-                      systemImage: active ? "checkmark.circle.fill" : "circle")
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule().fill(active ? Color.accentColor.opacity(0.18)
-                                              : Color.secondary.opacity(0.12))
+        ContentCard(
+            padding: MuniTheme.Spacing.md,
+            cornerRadius: MuniTheme.Radius.md,
+            fill: active ? MuniTheme.sectionActiveFill : MuniTheme.sectionInactiveFill,
+            stroke: active ? MuniTheme.sectionActiveStroke : MuniTheme.sectionInactiveStroke
+        ) {
+            VStack(alignment: .leading, spacing: MuniTheme.Spacing.sm) {
+                SectionHeader(title) {
+                    StatusBadge(
+                        title: "",
+                        value: active ? "Actif" : "Inactif",
+                        tone: active ? MuniTheme.accent : MuniTheme.textSecondary
                     )
-                    .overlay(
-                        Capsule().stroke(active ? Color.accentColor
-                                                : Color.secondary.opacity(0.35), lineWidth: 0.9)
-                    )
+                }
+                Divider().overlay(MuniTheme.divider)
+                content
             }
-            Divider().overlay(MuniTheme.divider)
-            content
         }
-        .padding(13)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(active ? MuniTheme.sectionActiveFill : MuniTheme.sectionInactiveFill)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(active ? MuniTheme.sectionActiveStroke : MuniTheme.sectionInactiveStroke,
-                        lineWidth: active ? 1.4 : 1)
-        )
-        .overlay(alignment: .top) {
-            Capsule()
-                .fill(active ? Color.accentColor.opacity(0.9) : Color.clear)
-                .frame(height: 3)
-                .padding(.horizontal, 10)
-        }
-        .shadow(color: .black.opacity(active ? 0.10 : 0.05),
-                radius: active ? 7 : 3, x: 0, y: active ? 3 : 1)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .clipped()
     }
 }
 
@@ -535,15 +513,16 @@ struct ContentView: View {
     @State private var showRunReport = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            mainLayout
-            if let report = vm.lastRunReport {
-                reportBanner(report)
+        AppShell {
+            VStack(spacing: MuniTheme.Spacing.md) {
+                toolbar
+                mainLayout
+                if let report = vm.lastRunReport {
+                    reportBanner(report)
+                }
             }
         }
-        .frame(minWidth: 900, minHeight: 560)
-        .background(MuniTheme.windowBackground)
+        .frame(minWidth: 1080, minHeight: 680)
         // Appliquer un preset choisi dans la fenêtre “Presets”
         .onReceive(presetStore.$presetToApply.compactMap { $0 }) { p in
             vm.apply(preset: p)
@@ -597,30 +576,25 @@ struct ContentView: View {
     @ViewBuilder
     private func reportBanner(_ report: RenameVM.RunReport) -> some View {
         let hasErrors = report.errorCount > 0
-        HStack(spacing: 12) {
-            Image(systemName: hasErrors ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                .foregroundStyle(hasErrors ? .orange : .green)
-            Text(hasErrors
-                ? "Dernière opération: \(report.renamedCount) succès, \(report.errorCount) erreur(s)."
-                : "Dernière opération réussie: \(report.renamedCount) fichier(s) traité(s)."
-            )
-            .font(.callout)
-            Spacer()
-            Button("Voir le rapport") { showRunReport = true }
-                .buttonStyle(.link)
+        ContentCard(
+            padding: MuniTheme.Spacing.md,
+            cornerRadius: MuniTheme.Radius.md,
+            fill: hasErrors ? MuniTheme.warning.opacity(0.12) : MuniTheme.success.opacity(0.12),
+            stroke: hasErrors ? MuniTheme.warning.opacity(0.35) : MuniTheme.success.opacity(0.35)
+        ) {
+            HStack(spacing: 12) {
+                Image(systemName: hasErrors ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    .foregroundStyle(hasErrors ? MuniTheme.warning : MuniTheme.success)
+                Text(hasErrors
+                    ? "Derniere operation: \(report.renamedCount) succes, \(report.errorCount) erreur(s)."
+                    : "Derniere operation reussie: \(report.renamedCount) fichier(s) traite(s)."
+                )
+                .font(.callout)
+                Spacer()
+                Button("Voir le rapport") { showRunReport = true }
+                    .buttonStyle(MuniQuietButtonStyle())
+            }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(hasErrors ? Color.orange.opacity(0.12) : Color.green.opacity(0.12))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(hasErrors ? Color.orange.opacity(0.35) : Color.green.opacity(0.35), lineWidth: 1)
-        )
-        .padding(.horizontal, 10)
-        .padding(.bottom, 10)
     }
 
     private var runReportText: String {
@@ -657,22 +631,21 @@ struct ContentView: View {
     // SplitView
     private var mainLayout: some View {
         HSplitView {
-            paneSurface {
+            SidebarPanel {
                 rulesPane
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(minWidth: 420, idealWidth: 560, maxWidth: 760, maxHeight: .infinity)
-            .layoutPriority(0)
+            .frame(minWidth: 420, idealWidth: 560, maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(1)
 
-            paneSurface {
+            PreviewPane {
                 fileTable
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(minWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
-            .layoutPriority(1)
+            .frame(minWidth: 430, idealWidth: 700, maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(2)
         }
-        .padding(.horizontal, 10)
-        .padding(.bottom, 10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .center) {
             if vm.isLoading {
                 ProgressView("Chargement…")
@@ -683,155 +656,176 @@ struct ContentView: View {
         }
     }
 
-    private func paneSurface<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .padding(8)
-            .muniSurface(cornerRadius: 14, fill: MuniTheme.paneFill, stroke: MuniTheme.paneStroke)
-    }
-
-    // Panneau règles (colonne unique, comme BRU)
+    // Panneau regles adaptatif
     private var rulesPane: some View {
-        ScrollView {
-            rulesColumn
-                .padding(10)
+        GeometryReader { geo in
+            ScrollView {
+                if geo.size.width >= 1120 {
+                    HStack(alignment: .top, spacing: MuniTheme.Spacing.md) {
+                        rulesPrimaryColumn
+                        rulesSecondaryColumn
+                    }
+                    .padding(MuniTheme.Spacing.sm)
+                } else {
+                    rulesSingleColumn
+                        .padding(MuniTheme.Spacing.sm)
+                }
+            }
+            .clipped()
+            .modifier(PreviewRecomputeModifier(vm: vm))
         }
-        .clipped()
-        .modifier(PreviewRecomputeModifier(vm: vm))
     }
 
-    private var rulesColumn: some View {
+    private var rulesSingleColumn: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionCard(title: "(1) Remplacer",   active: vm.replace.enabled) { replaceView }
             SectionCard(title: "(2) Retirer",      active: vm.remove.enabled)  { removeView }
             SectionCard(title: "(3) Ajouter",      active: vm.add.enabled)     { addView }
             SectionCard(title: "(4) Date auto",    active: vm.date.enabled)    { dateView }
             SectionCard(title: "(5) Numérotation", active: vm.num.enabled)     { numberingView }
+            rulesSecondaryColumn
+        }
+    }
+
+    private var rulesPrimaryColumn: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionCard(title: "(1) Remplacer",   active: vm.replace.enabled) { replaceView }
+            SectionCard(title: "(2) Retirer",      active: vm.remove.enabled)  { removeView }
+            SectionCard(title: "(3) Ajouter",      active: vm.add.enabled)     { addView }
+            SectionCard(title: "(4) Date auto",    active: vm.date.enabled)    { dateView }
+            SectionCard(title: "(5) Numérotation", active: vm.num.enabled)     { numberingView }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    private var rulesSecondaryColumn: some View {
+        VStack(alignment: .leading, spacing: 10) {
             SectionCard(title: "(6) Casse",          active: vm.casing.enabled)     { caseView }
             SectionCard(title: "(7) Extension",      active: vm.ext.enabled)        { extView }
             SectionCard(title: "(8) Dossier parent", active: vm.folder.enabled)     { folderView }
             SectionCard(title: "(9) Spécial",        active: vm.special.enabled)    { specialView }
-            SectionCard(title: "Destination",        active: vm.destination.enabled){ destinationView }
+            SectionCard(title: "Destination",        active: vm.destination.enabled) { destinationView }
             SectionCard(
                 title: "Filtres",
                 active: !vm.filters.includeRegex.isEmpty
-                     || !vm.filters.excludeRegex.isEmpty
-                     || vm.filters.recursive
-                     || vm.filters.includeHidden
-            ) { filtersView }
+                    || !vm.filters.excludeRegex.isEmpty
+                    || vm.filters.recursive
+                    || vm.filters.includeHidden
+            ) {
+                filtersView
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     // Toolbar
     var toolbar: some View {
-        VStack(spacing: 10) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("MuniRename")
-                        .font(.title3.weight(.semibold))
-                    Text("Renommage en lot manuel")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        ContentCard(padding: MuniTheme.Spacing.md, cornerRadius: MuniTheme.Radius.lg, fill: MuniTheme.surfacePrimary) {
+            VStack(spacing: MuniTheme.Spacing.sm) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("MuniRename")
+                            .font(.title3.weight(.semibold))
+                        Text("Renommage en lot manuel")
+                            .font(.caption)
+                            .foregroundStyle(MuniTheme.textSecondary)
+                    }
+                    Spacer()
+                    HStack(spacing: 8) {
+                        StatusBadge(title: "Fichiers", value: "\(vm.entries.count)")
+                        StatusBadge(title: "Selection", value: "\(vm.selection.count)")
+                        StatusBadge(
+                            title: "Etat",
+                            value: vm.isLoading ? "Chargement" : "Pret",
+                            tone: vm.isLoading ? MuniTheme.accent : MuniTheme.textPrimary
+                        )
+                    }
                 }
-                Spacer()
+
                 HStack(spacing: 8) {
-                    headerBadge("Fichiers", value: "\(vm.entries.count)")
-                    headerBadge("Sélection", value: "\(vm.selection.count)")
-                    headerBadge("État", value: vm.isLoading ? "Chargement" : "Prêt", isAccent: vm.isLoading)
+                    SecondaryActionButton(title: "Choisir un dossier", systemImage: "folder") {
+                        vm.pickFolder()
+                    }
+                    if let d = vm.directoryURL {
+                        pathPill(d.path)
+                    } else {
+                        pathPill("Aucun dossier selectionne")
+                    }
+                    Spacer()
+                    ToolbarButton(title: "Rafraichir", systemImage: "arrow.clockwise") {
+                        vm.loadEntries()
+                    }
+                    .keyboardShortcut("r")
                 }
-            }
 
-            HStack(spacing: 8) {
-                Button { vm.pickFolder() } label: {
-                    Label("Choisir un dossier", systemImage: "folder")
-                }
-                if let d = vm.directoryURL {
-                    Text(d.path)
-                        .font(.callout.monospaced())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                } else {
-                    Text("Aucun dossier sélectionné")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button { vm.loadEntries() } label: {
-                    Label("Rafraîchir", systemImage: "arrow.clockwise")
-                }
-                .keyboardShortcut("r")
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ControlGroup("Sélection") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
                         Button("Tout") { vm.selection = Set(vm.entries.map { $0.id }) }
+                            .buttonStyle(MuniSecondaryButtonStyle())
                             .disabled(vm.entries.isEmpty)
                         Button("Effacer") { vm.selection.removeAll() }
+                            .buttonStyle(MuniSecondaryButtonStyle())
                             .disabled(vm.selection.isEmpty)
-                    }
 
-                    Toggle("Aperçu seulement sélection", isOn: $vm.previewOnlySelection)
-                        .toggleStyle(.checkbox)
-                        .disabled(vm.entries.isEmpty)
+                        Toggle("Apercu seulement selection", isOn: $vm.previewOnlySelection)
+                            .toggleStyle(.checkbox)
+                            .disabled(vm.entries.isEmpty)
 
-                    Menu {
-                        Button("Gestion des presets…") { openWindow(id: "presets") }
-                        Button("Importer preset…") { presetStore.importSingle() }
-                        Button("Sauver preset courant…") {
-                            var p = vm.currentPreset
-                            p.formatVersion = RenamePreset.currentFormatVersion
-                            p.name = "Preset depuis la fenêtre"
-                            presetStore.items.append(p)
-                            presetStore.save()
+                        Menu {
+                            Button("Gestion des presets…") { openWindow(id: "presets") }
+                            Button("Importer preset…") { presetStore.importSingle() }
+                            Button("Sauver preset courant…") {
+                                var p = vm.currentPreset
+                                p.formatVersion = RenamePreset.currentFormatVersion
+                                p.name = "Preset depuis la fenetre"
+                                presetStore.items.append(p)
+                                presetStore.save()
+                            }
+                        } label: {
+                            Label("Presets", systemImage: "square.stack.3d.up")
                         }
-                    } label: {
-                        Label("Presets", systemImage: "square.stack.3d.up")
-                    }
+                        .buttonStyle(MuniSecondaryButtonStyle())
 
-                    Divider().frame(height: 20)
+                        Divider().frame(height: 20)
 
-                    Button { showSimulation = true } label: {
-                        Label("Simulation", systemImage: "doc.text.magnifyingglass")
+                        ToolbarButton(title: "Simulation", systemImage: "doc.text.magnifyingglass") {
+                            showSimulation = true
+                        }
+                        ToolbarButton(title: "Rapport", systemImage: "list.bullet.clipboard", isDisabled: vm.lastRunReport == nil) {
+                            showRunReport = vm.lastRunReport != nil
+                        }
+                        PrimaryActionButton(title: "Appliquer", systemImage: "hammer") {
+                            showApplyConfirmation = true
+                        }
+                        .keyboardShortcut(.return)
+                        ToolbarButton(title: "Annuler", systemImage: "arrow.uturn.backward") {
+                            vm.undoLast()
+                        }
+                        .keyboardShortcut("z", modifiers: [.command, .shift])
                     }
-                    Button { showRunReport = vm.lastRunReport != nil } label: {
-                        Label("Rapport", systemImage: "list.bullet.clipboard")
-                    }
-                    .disabled(vm.lastRunReport == nil)
-                    Button { showApplyConfirmation = true } label: {
-                        Label("Appliquer", systemImage: "hammer")
-                    }
-                    .keyboardShortcut(.return)
-                    Button { vm.undoLast() } label: {
-                        Label("Annuler", systemImage: "arrow.uturn.backward")
-                    }
-                    .keyboardShortcut("z", modifiers: [.command, .shift])
+                    .padding(.horizontal, 2)
                 }
-                .padding(.horizontal, 2)
             }
         }
-        .padding(12)
-        .muniSurface(cornerRadius: 14, fill: MuniTheme.panelFill, stroke: MuniTheme.panelStroke)
-        .padding(.horizontal, 10)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
     }
 
-    private func headerBadge(_ title: String, value: String, isAccent: Bool = false) -> some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(isAccent ? Color.accentColor : .primary)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(
-            Capsule()
-                .fill(isAccent ? Color.accentColor.opacity(0.12) : Color.black.opacity(0.04))
-        )
+    private func pathPill(_ path: String) -> some View {
+        Text(path)
+            .font(.system(.caption, design: .monospaced))
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .muniSurface(
+                cornerRadius: MuniTheme.Radius.sm,
+                fill: MuniTheme.surfaceTertiary,
+                stroke: MuniTheme.borderLight,
+                shadowColor: .clear,
+                shadowRadius: 0,
+                shadowY: 0
+            )
     }
 
     private func tf(_ binding: Binding<String>, placeholder: String = "") -> some View {
@@ -1337,27 +1331,17 @@ extension ContentView {
         }
         .overlay {
             if vm.directoryURL == nil {
-                VStack(spacing: 8) {
-                    Image(systemName: "folder.badge.questionmark")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.secondary)
-                    Text("Aucun dossier sélectionné")
-                        .font(.headline)
-                    Text("Commencez par cliquer sur « Choisir un dossier ».")
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
+                EmptyStateView(
+                    icon: "folder.badge.questionmark",
+                    title: "Aucun dossier selectionne",
+                    message: "Commencez par cliquer sur « Choisir un dossier »."
+                )
             } else if vm.entries.isEmpty && !vm.isLoading {
-                VStack(spacing: 8) {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.secondary)
-                    Text("Aucun fichier trouvé")
-                        .font(.headline)
-                    Text("Vérifiez les filtres ou choisissez un autre dossier.")
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
+                EmptyStateView(
+                    icon: "doc.text.magnifyingglass",
+                    title: "Aucun fichier trouve",
+                    message: "Verifiez les filtres ou choisissez un autre dossier."
+                )
             }
         }
     }

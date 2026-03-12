@@ -2,27 +2,60 @@ import SwiftUI
 import AppKit
 
 enum MuniTheme {
+    // MARK: Color tokens
+    static let backgroundTop = Color(nsColor: NSColor(calibratedWhite: 0.97, alpha: 1.0))
+    static let backgroundBottom = Color(nsColor: NSColor(calibratedWhite: 0.94, alpha: 1.0))
     static let windowBackground = LinearGradient(
-        colors: [
-            Color(nsColor: NSColor(calibratedWhite: 0.96, alpha: 1.0)),
-            Color(nsColor: NSColor(calibratedWhite: 0.93, alpha: 1.0))
-        ],
+        colors: [backgroundTop, backgroundBottom],
         startPoint: .top,
         endPoint: .bottom
     )
 
-    static let panelFill = Color.white.opacity(0.72)
-    static let panelStroke = Color.black.opacity(0.12)
+    static let surfacePrimary = Color(nsColor: .windowBackgroundColor).opacity(0.94)
+    static let surfaceSecondary = Color(nsColor: .controlBackgroundColor).opacity(0.98)
+    static let surfaceTertiary = Color(nsColor: .controlBackgroundColor).opacity(0.90)
 
-    static let paneFill = Color.white.opacity(0.65)
-    static let paneStroke = Color.black.opacity(0.10)
-
-    static let sectionActiveFill = Color.accentColor.opacity(0.10)
-    static let sectionInactiveFill = Color.white.opacity(0.72)
-    static let sectionActiveStroke = Color.accentColor.opacity(0.75)
-    static let sectionInactiveStroke = Color.black.opacity(0.12)
-
+    static let borderLight = Color.black.opacity(0.09)
+    static let borderStrong = Color.black.opacity(0.14)
     static let divider = Color.black.opacity(0.08)
+    static let splitDivider = Color.black.opacity(0.12)
+
+    static let accent = Color.accentColor
+    static let textPrimary = Color.primary
+    static let textSecondary = Color.secondary
+    static let success = Color.green
+    static let warning = Color.orange
+    static let danger = Color.red
+
+    // MARK: spacing tokens
+    enum Spacing {
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 24
+    }
+
+    // MARK: radii tokens
+    enum Radius {
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 14
+    }
+
+    // MARK: shadows
+    static let shadowSoft = Color.black.opacity(0.05)
+    static let shadowActive = Color.black.opacity(0.10)
+
+    // MARK: compatibility aliases
+    static let panelFill = surfacePrimary
+    static let panelStroke = borderLight
+    static let paneFill = surfaceSecondary
+    static let paneStroke = borderLight
+    static let sectionActiveFill = accent.opacity(0.08)
+    static let sectionInactiveFill = surfaceSecondary
+    static let sectionActiveStroke = accent.opacity(0.45)
+    static let sectionInactiveStroke = borderLight
 }
 
 private struct MuniSurfaceModifier: ViewModifier {
@@ -30,6 +63,9 @@ private struct MuniSurfaceModifier: ViewModifier {
     var fill: Color
     var stroke: Color
     var lineWidth: CGFloat
+    var shadowColor: Color
+    var shadowRadius: CGFloat
+    var shadowY: CGFloat
 
     func body(content: Content) -> some View {
         content
@@ -41,16 +77,85 @@ private struct MuniSurfaceModifier: ViewModifier {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(stroke, lineWidth: lineWidth)
             )
+            .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowY)
     }
 }
 
 extension View {
     func muniSurface(
-        cornerRadius: CGFloat = 12,
-        fill: Color = MuniTheme.panelFill,
-        stroke: Color = MuniTheme.panelStroke,
-        lineWidth: CGFloat = 1
+        cornerRadius: CGFloat = MuniTheme.Radius.md,
+        fill: Color = MuniTheme.surfacePrimary,
+        stroke: Color = MuniTheme.borderLight,
+        lineWidth: CGFloat = 1,
+        shadowColor: Color = MuniTheme.shadowSoft,
+        shadowRadius: CGFloat = 2,
+        shadowY: CGFloat = 1
     ) -> some View {
-        modifier(MuniSurfaceModifier(cornerRadius: cornerRadius, fill: fill, stroke: stroke, lineWidth: lineWidth))
+        modifier(
+            MuniSurfaceModifier(
+                cornerRadius: cornerRadius,
+                fill: fill,
+                stroke: stroke,
+                lineWidth: lineWidth,
+                shadowColor: shadowColor,
+                shadowRadius: shadowRadius,
+                shadowY: shadowY
+            )
+        )
+    }
+}
+
+struct MuniPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout.weight(.semibold))
+            .padding(.horizontal, MuniTheme.Spacing.md)
+            .padding(.vertical, 7)
+            .foregroundStyle(Color.white)
+            .background(
+                RoundedRectangle(cornerRadius: MuniTheme.Radius.sm, style: .continuous)
+                    .fill(MuniTheme.accent.opacity(configuration.isPressed ? 0.75 : 0.92))
+            )
+    }
+}
+
+struct MuniSecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout.weight(.medium))
+            .padding(.horizontal, MuniTheme.Spacing.md)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: MuniTheme.Radius.sm, style: .continuous)
+                    .fill(MuniTheme.surfaceTertiary.opacity(configuration.isPressed ? 0.85 : 1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: MuniTheme.Radius.sm, style: .continuous)
+                    .stroke(MuniTheme.borderLight, lineWidth: 1)
+            )
+    }
+}
+
+struct MuniQuietButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout)
+            .padding(.horizontal, MuniTheme.Spacing.sm)
+            .padding(.vertical, 5)
+            .foregroundStyle(MuniTheme.textPrimary.opacity(configuration.isPressed ? 0.70 : 1))
+    }
+}
+
+struct MuniDestructiveButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.callout.weight(.semibold))
+            .padding(.horizontal, MuniTheme.Spacing.md)
+            .padding(.vertical, 7)
+            .foregroundStyle(Color.white)
+            .background(
+                RoundedRectangle(cornerRadius: MuniTheme.Radius.sm, style: .continuous)
+                    .fill(MuniTheme.danger.opacity(configuration.isPressed ? 0.75 : 0.90))
+            )
     }
 }
