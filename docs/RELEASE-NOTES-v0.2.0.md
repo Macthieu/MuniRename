@@ -1,6 +1,6 @@
-# MuniRename v0.2.0
+# MuniRenommage v0.2.0
 
-Cette release marque une remise à niveau majeure de MuniRename vers un niveau publiable plus sérieux.
+Cette release marque une remise à niveau majeure de MuniRenommage vers un niveau publiable plus sérieux.
 
 ## Points clés
 

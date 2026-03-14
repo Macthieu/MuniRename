@@ -1,10 +1,10 @@
-# UI Refonte Plan - MuniRename
+# UI Refonte Plan - MuniRenommage
 
 Date: 2026-03-11
 
 ## Cible
 
-- Un shell visuel commun (style MuniConvert, inspire elementary OS sans copie).
+- Un shell visuel commun (style MuniConversion, inspire elementary OS sans copie).
 - Deux zones majeures stables: regles (gauche) et apercu/resultat (droite).
 - Actions principales clairement mises en avant (Appliquer), secondaires plus discretes.
 

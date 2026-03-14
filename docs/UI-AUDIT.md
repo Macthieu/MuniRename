@@ -1,4 +1,4 @@
-# UI Audit - MuniRename
+# UI Audit - MuniRenommage
 
 Date: 2026-03-11
 
@@ -15,6 +15,6 @@ Date: 2026-03-11
 
 ## Souhaitable
 
-- Composants UI communs entre MuniRename et MuniConvert.
+- Composants UI communs entre MuniRenommage et MuniConversion.
 - Palette et tokens partages (espacements/rayons/boutons/badges).
 - Adaptation explicite a la largeur ecran pour les regles (1 colonne vs 2 colonnes).

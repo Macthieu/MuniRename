@@ -1,11 +1,11 @@
-# Harmonisation MuniConvert
+# Harmonisation MuniConversion
 
 Date: 2026-03-11
 
 ## Base reutilisable immediate
 
-- Copier `MuniTheme.swift` et `MuniComponents.swift` dans MuniConvert (ou extraire en package commun `MuniUIKit`).
-- Remplacer progressivement les wrappers visuels locaux de MuniConvert par:
+- Copier `MuniTheme.swift` et `MuniComponents.swift` dans MuniConversion (ou extraire en package commun `MuniUIKit`).
+- Remplacer progressivement les wrappers visuels locaux de MuniConversion par:
   - `AppShell`
   - `ContentCard`
   - `StatusBadge`
@@ -18,4 +18,4 @@ Date: 2026-03-11
 
 ## Risque principal
 
-- Uniformiser trop vite et perdre les patterns qui marchent deja dans MuniConvert.
+- Uniformiser trop vite et perdre les patterns qui marchent deja dans MuniConversion.

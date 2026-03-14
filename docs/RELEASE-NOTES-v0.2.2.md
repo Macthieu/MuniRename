@@ -1,4 +1,4 @@
-# MuniRename v0.2.2
+# MuniRenommage v0.2.2
 
 Release patch UX orientée presets.
 

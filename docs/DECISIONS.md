@@ -1,4 +1,4 @@
-# DECISIONS D'ARCHITECTURE - MuniRename
+# DECISIONS D'ARCHITECTURE - MuniRenommage
 
 Date: 2026-03-11
 
@@ -63,7 +63,7 @@ Pourquoi:
 ## D5 - Positionnement produit explicite
 
 Decision:
-- MuniRename est maintenu comme outil de renommage en lot **manuel**.
+- MuniRenommage est maintenu comme outil de renommage en lot **manuel**.
 - Le CLI reste un mode d'execution manuel, pas une automatisation orchestreur.
 
 Pourquoi:
@@ -80,7 +80,7 @@ Decision:
 
 Pourquoi:
 - Eviter les styles "en dur" disperses.
-- Preparer une convergence visuelle avec MuniConvert via des tokens partages.
+- Preparer une convergence visuelle avec MuniConversion via des tokens partages.
 
 Trade-off:
 - Ce n'est pas encore un package partage entre repos; extraction inter-projets a faire ensuite.

@@ -1,4 +1,4 @@
-# RELEASE CHECKLIST - MuniRename
+# RELEASE CHECKLIST - MuniRenommage
 
 Version cible: `v0.2.2`
 

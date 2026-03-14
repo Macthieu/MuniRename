@@ -1,4 +1,4 @@
-# BRANDING ET ICONE - MuniRename
+# BRANDING ET ICONE - MuniRenommage
 
 Date: 2026-03-11
 

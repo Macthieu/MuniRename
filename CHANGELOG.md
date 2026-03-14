@@ -47,4 +47,4 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce pr
 ## [0.1.0] - 2026-03-11
 
 ### Added
-- Première publication du projet MuniRename.
+- Première publication du projet MuniRenommage.

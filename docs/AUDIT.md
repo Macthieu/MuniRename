@@ -1,4 +1,4 @@
-# AUDIT COMPLET - MuniRename
+# AUDIT COMPLET - MuniRenommage
 
 Date: 2026-03-11
 Portee: audit mainteneur principal (code, architecture, assets, release readiness)

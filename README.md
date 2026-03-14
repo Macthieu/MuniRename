@@ -1,10 +1,15 @@
-# MuniRename
+# MuniRenommage
 
-MuniRename est un logiciel de renommage en lot **manuel** pour macOS, inspiré par la puissance d'outils comme Bulk Rename Utility, avec une interface plus lisible et orientée usage quotidien.
+MuniRenommage est un logiciel de renommage en lot **manuel** pour macOS, inspiré par la puissance d'outils comme Bulk Rename Utility, avec une interface plus lisible et orientée usage quotidien.
 
-Le projet est sous licence GNU GPL v3.0.
+Le projet est publié sous licence GNU GPL v3.0.
 
-## Objectif produit
+## Positionnement
+
+- Rôle: outil spécialisé de renommage dans l'écosystème Orchiviste.
+- Orchiviste reste le cockpit/hub; MuniRenommage reste un outil autonome dédié.
+
+## Mission
 
 - Renommer des lots de fichiers de façon contrôlée.
 - Prévisualiser les résultats avant d'écrire quoi que ce soit sur disque.
@@ -138,6 +143,16 @@ swift run munirename-cli validate-preset --preset ./preset.json
 - CI GitHub: `.github/workflows/ci.yml`
 - Changelog: `CHANGELOG.md`
 - Décisions d'architecture: `docs/DECISIONS.md`
+
+## Versionnage
+
+- Le projet suit `Semantic Versioning`.
+- Référence actuelle: `0.2.2`.
+
+## Note de transition de nommage
+
+Le nom public est `MuniRenommage`.
+Certains identifiants techniques internes historiques restent temporairement en `MuniRename` (chemins, schémas, modules) pour éviter un refactor applicatif dans cette passe.
 
 ## Licence
 

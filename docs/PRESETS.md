@@ -1,9 +1,9 @@
-# PRESETS - MuniRename
+# PRESETS - MuniRenommage
 
 Date: 2026-03-11
 Option retenue: **B - refactorer modérément**
 
-## 1) Ce qu'est un preset dans MuniRename
+## 1) Ce qu'est un preset dans MuniRenommage
 
 Un preset est un **profil métier de renommage manuel** réutilisable.
 

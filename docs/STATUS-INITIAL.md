@@ -1,7 +1,7 @@
-# STATUS INITIAL - MuniRename
+# STATUS INITIAL - MuniRenommage
 
 Date de vérification: 2026-03-11
-Répertoire local: `/Volumes/MAC_HDD/Logiciel test/MuniRename`
+Répertoire local: `/Volumes/MAC_HDD/Logiciel test/MunicipalApps/MuniRenommage`
 
 ## Etat Git local
 
@@ -14,13 +14,13 @@ Répertoire local: `/Volumes/MAC_HDD/Logiciel test/MuniRename`
 
 ## Remote
 
-- `origin (fetch)`: `https://github.com/Macthieu/MuniRename.git`
-- `origin (push)`: `https://github.com/Macthieu/MuniRename.git`
+- `origin (fetch)`: `https://github.com/Macthieu/MuniRenommage.git`
+- `origin (push)`: `https://github.com/Macthieu/MuniRenommage.git`
 - Remote attendu: OK (correspond exactement au dépôt visé)
 
 ## Depot GitHub
 
-- URL: `https://github.com/Macthieu/MuniRename`
+- URL: `https://github.com/Macthieu/MuniRenommage`
 - Accessibilité: OK (repo accessible via `gh`)
 - Branche par défaut: `main`
 - Visibilité: public

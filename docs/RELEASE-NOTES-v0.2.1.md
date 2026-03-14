@@ -1,4 +1,4 @@
-# MuniRename v0.2.1
+# MuniRenommage v0.2.1
 
 Release patch orientée stabilisation Xcode et maintenabilité du projet.
 
