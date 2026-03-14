@@ -1,0 +1,15 @@
+{
+  "originHash" : "e0e14cf8d5f17983a78312dc0fc9e1adcafa28b995882626d8700a8fee6893ce",
+  "pins" : [
+    {
+      "identity" : "orchivistekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Macthieu/OrchivisteKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b35a054a0a99985c32e0e39f1812f8f2bebd8236"
+      }
+    }
+  ],
+  "version" : 3
+}

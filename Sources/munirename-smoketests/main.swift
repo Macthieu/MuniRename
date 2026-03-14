@@ -1,5 +1,7 @@
 import Foundation
 import MuniRenameCore
+import MuniRenameInterop
+import OrchivisteKitContracts
 
 struct SmokeTestRunner {
     private(set) var failures: [String] = []
@@ -27,6 +29,16 @@ func makeTempDir(prefix: String) throws -> URL {
     let url = FileManager.default.temporaryDirectory.appendingPathComponent(prefix + UUID().uuidString)
     try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
+}
+
+func makePresetFile(in directory: URL, prefix: String = "PFX_") throws -> URL {
+    var preset = RenamePreset(name: "Canonical", category: "QA")
+    preset.rules.add = AddRule(enabled: true, usePrefix: true, prefix: prefix, useSuffix: false)
+
+    let data = try PresetCodec.encodePresetDocument(preset)
+    let presetURL = directory.appendingPathComponent("preset.json")
+    try data.write(to: presetURL)
+    return presetURL
 }
 
 var runner = SmokeTestRunner()
@@ -153,6 +165,67 @@ runner.run("Validation preset") {
     try expect(issues.contains(where: { $0.field == "name" }), "Nom vide non detecte")
     try expect(issues.contains(where: { $0.field == "rules.numbering.step" }), "Step invalide non detecte")
     try expect(issues.contains(where: { $0.field == "rules.destination.url" }), "Destination invalide non detectee")
+}
+
+runner.run("Canonical apply exige confirmation explicite") {
+    let tempDir = try makeTempDir(prefix: "munirename-canonical-apply-")
+    defer { try? FileManager.default.removeItem(at: tempDir) }
+
+    let sourceFile = tempDir.appendingPathComponent("doc.txt")
+    try "DOC".data(using: .utf8)?.write(to: sourceFile)
+    let presetURL = try makePresetFile(in: tempDir, prefix: "REN_")
+
+    let request = ToolRequest(
+        requestID: "req-apply-confirm",
+        tool: "MuniRenommage",
+        action: "apply",
+        inputArtifacts: [],
+        parameters: [
+            "preset_path": .string(presetURL.path),
+            "directory_path": .string(tempDir.path),
+            "dry_run": .bool(false),
+            "confirm_apply": .bool(false)
+        ]
+    )
+
+    let result = CanonicalRunAdapter.execute(request: request)
+
+    try expect(result.status == .failed, "Le mode canonique doit refuser apply sans confirmation")
+    try expect(
+        result.errors.contains(where: { $0.code == "EXPLICIT_CONFIRMATION_REQUIRED" }),
+        "Le code d'erreur attendu n'est pas present"
+    )
+    try expect(FileManager.default.fileExists(atPath: sourceFile.path), "Le fichier source ne doit pas etre modifie")
+    try expect(
+        !FileManager.default.fileExists(atPath: tempDir.appendingPathComponent("REN_doc.txt").path),
+        "Aucun renommage ne doit se produire sans confirmation explicite"
+    )
+}
+
+runner.run("Canonical preview retourne un resultat canonique") {
+    let tempDir = try makeTempDir(prefix: "munirename-canonical-preview-")
+    defer { try? FileManager.default.removeItem(at: tempDir) }
+
+    let sourceFile = tempDir.appendingPathComponent("sample.txt")
+    try "TXT".data(using: .utf8)?.write(to: sourceFile)
+    let presetURL = try makePresetFile(in: tempDir, prefix: "PRE_")
+
+    let request = ToolRequest(
+        requestID: "req-preview",
+        tool: "MuniRenommage",
+        action: "preview",
+        inputArtifacts: [],
+        parameters: [
+            "preset_path": .string(presetURL.path),
+            "directory_path": .string(tempDir.path)
+        ]
+    )
+
+    let result = CanonicalRunAdapter.execute(request: request)
+
+    try expect(result.status == .succeeded, "Preview canonique devrait etre en succeeded")
+    try expect(result.errors.isEmpty, "Preview canonique ne doit pas produire d'erreurs")
+    try expect(result.metadata["action"] == .string("preview"), "Metadata action invalide")
 }
 
 if runner.failures.isEmpty {

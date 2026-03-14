@@ -1,5 +1,8 @@
 import Foundation
 import MuniRenameCore
+import MuniRenameInterop
+import OrchivisteKitContracts
+import OrchivisteKitInterop
 
 enum CLIError: Error, CustomStringConvertible {
     case usage(String)
@@ -35,6 +38,7 @@ func printUsage() {
     MuniRename CLI (manuel, sans Xcode)
 
     Usage:
+      munirename-cli run --request <request.json> --result <result.json>
       munirename-cli preview --preset <preset.json> --directory <folder> [--recursive] [--include-hidden]
       munirename-cli apply --preset <preset.json> --directory <folder> [--recursive] [--include-hidden] [--dry-run]
       munirename-cli validate-preset --preset <preset.json>
@@ -115,6 +119,11 @@ func run() throws {
         return
     }
 
+    if isCanonicalRunInvocation(args) {
+        try runCanonical(args)
+        return
+    }
+
     let config = try parseArguments(args)
     let preset = try loadPreset(from: config.presetFile)
     let issues = PresetValidator.validate(preset)
@@ -185,6 +194,60 @@ func run() throws {
     print("\nExecution terminee: \(report.renamedCount) fichier(s) traite(s), \(report.errorCount) erreur(s)")
     if report.errorCount > 0 {
         throw CLIError.runtime("Certaines operations ont echoue")
+    }
+}
+
+func isCanonicalRunInvocation(_ args: [String]) -> Bool {
+    args.dropFirst().first == "run"
+}
+
+func runCanonical(_ args: [String]) throws {
+    guard let requestPath = optionValue("--request", in: args) else {
+        throw CLIError.usage("--request est obligatoire en mode run canonique")
+    }
+    guard let resultPath = optionValue("--result", in: args) else {
+        throw CLIError.usage("--result est obligatoire en mode run canonique")
+    }
+
+    let requestURL = URL(fileURLWithPath: requestPath)
+    let resultURL = URL(fileURLWithPath: resultPath)
+
+    let request: ToolRequest
+    do {
+        request = try ToolInteropService.loadRequest(from: requestURL)
+    } catch {
+        throw CLIError.runtime("Lecture ToolRequest impossible: \(error.localizedDescription)")
+    }
+
+    let result = CanonicalRunAdapter.execute(request: request)
+
+    do {
+        try ToolInteropService.writeResult(result, to: resultURL)
+    } catch {
+        throw CLIError.runtime("Ecriture ToolResult impossible: \(error.localizedDescription)")
+    }
+
+    printToolResult(result)
+
+    if result.status == .failed {
+        throw CLIError.runtime("Execution canonique echouee")
+    }
+}
+
+func optionValue(_ option: String, in args: [String]) -> String? {
+    guard let index = args.firstIndex(of: option), index + 1 < args.count else {
+        return nil
+    }
+    return args[index + 1]
+}
+
+func printToolResult(_ result: ToolResult) {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    if let data = try? encoder.encode(result), let json = String(data: data, encoding: .utf8) {
+        print(json)
+    } else {
+        print("{\"status\":\"failed\",\"summary\":\"Unable to encode ToolResult.\"}")
     }
 }
 

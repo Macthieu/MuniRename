@@ -103,10 +103,16 @@ swift run munirename-cli --help
 ## Usage (CLI)
 
 ```bash
+swift run munirename-cli run --request ./request.json --result ./result.json
 swift run munirename-cli preview --preset ./preset.json --directory ./dossier
 swift run munirename-cli apply --preset ./preset.json --directory ./dossier --dry-run
 swift run munirename-cli validate-preset --preset ./preset.json
 ```
+
+Mode canonique (`run --request/--result`) :
+- utilise le contrat `ToolRequest/ToolResult` d'OrchivisteKit;
+- n'execute pas d'operation destructive par defaut (`apply` canonique est en `dry_run=true` par defaut);
+- exige `confirm_apply=true` + `dry_run=false` pour autoriser un renommage reel.
 
 ## Presets
 

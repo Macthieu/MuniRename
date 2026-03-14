@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "MuniRename",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v14)
     ],
     products: [
         .library(
@@ -20,17 +20,35 @@ let package = Package(
             targets: ["munirename-smoketests"]
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/Macthieu/OrchivisteKit.git", branch: "main")
+    ],
     targets: [
         .target(
             name: "MuniRenameCore"
         ),
+        .target(
+            name: "MuniRenameInterop",
+            dependencies: [
+                "MuniRenameCore",
+                .product(name: "OrchivisteKitContracts", package: "OrchivisteKit")
+            ]
+        ),
         .executableTarget(
             name: "munirename-cli",
-            dependencies: ["MuniRenameCore"]
+            dependencies: [
+                "MuniRenameCore",
+                "MuniRenameInterop",
+                .product(name: "OrchivisteKitInterop", package: "OrchivisteKit")
+            ]
         ),
         .executableTarget(
             name: "munirename-smoketests",
-            dependencies: ["MuniRenameCore"]
+            dependencies: [
+                "MuniRenameCore",
+                "MuniRenameInterop",
+                .product(name: "OrchivisteKitContracts", package: "OrchivisteKit")
+            ]
         )
     ]
 )
