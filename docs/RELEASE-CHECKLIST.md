@@ -1,6 +1,6 @@
 # RELEASE CHECKLIST - MuniRenommage
 
-Version cible: `v0.2.2`
+Version cible: `v0.3.0`
 
 ## Avant tag
 
@@ -8,6 +8,8 @@ Version cible: `v0.2.2`
 - [ ] `swift build` OK
 - [ ] `swift run munirename-smoketests` OK
 - [ ] `swift run munirename-cli --help` OK
+- [ ] `swift run munirename-cli run --request <request.json> --result <result.json>` OK
+- [ ] Commandes legacy OK: `preview`, `apply --dry-run`, `validate-preset`
 - [ ] README à jour
 - [ ] CHANGELOG à jour
 - [ ] Licence GPLv3 présente
@@ -17,9 +19,9 @@ Version cible: `v0.2.2`
 
 - [ ] Commit final sur `main`
 - [ ] Push `main`
-- [ ] Tag annoté `v0.2.2`
+- [ ] Tag annoté `v0.3.0`
 - [ ] Push du tag
-- [ ] Création release GitHub avec notes `docs/RELEASE-NOTES-v0.2.2.md`
+- [ ] Création release GitHub avec notes `docs/RELEASE-NOTES-v0.3.0.md`
 
 ## Après publication
 

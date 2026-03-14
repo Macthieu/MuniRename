@@ -6,6 +6,18 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce pr
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-14
+
+### Added
+- Mode canonique OrchivisteKit via `munirename-cli run --request <file> --result <file>`.
+- Adaptation `ToolRequest/ToolResult` avec garde-fous explicites pour l'action `apply`:
+  - `dry_run=true` par defaut
+  - execution reelle uniquement avec `dry_run=false` et `confirm_apply=true`
+
+### Changed
+- Harmonisation visuelle de l'UI (theme Muni, contraste, split adaptatif) sans rupture des commandes legacy.
+- Documentation ecosysteme et nommage public alignes sur `MuniRenommage`.
+
 ## [0.2.2] - 2026-03-11
 
 ### Changed

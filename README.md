@@ -153,7 +153,7 @@ Mode canonique (`run --request/--result`) :
 ## Versionnage
 
 - Le projet suit `Semantic Versioning`.
-- Référence actuelle: `0.2.2`.
+- Référence actuelle: `0.3.0`.
 
 ## Note de transition de nommage
 
