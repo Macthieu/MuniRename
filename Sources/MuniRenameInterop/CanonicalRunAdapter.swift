@@ -58,6 +58,46 @@ private enum CanonicalAction: String, Sendable {
     case validatePreset = "validate-preset"
 }
 
+private struct MuniReglesBundleManifestPayload: Codable, Sendable {
+    let bundleVersion: String?
+    let moduleVersion: String?
+
+    enum CodingKeys: String, CodingKey {
+        case bundleVersion = "bundle_version"
+        case moduleVersion = "module_version"
+    }
+}
+
+private struct MuniReglesNamingRulePayload: Codable, Sendable {
+    let id: String
+}
+
+private struct MuniReglesNamingAndRoutingRulesPayload: Codable, Sendable {
+    let namingRules: [MuniReglesNamingRulePayload]
+
+    enum CodingKeys: String, CodingKey {
+        case namingRules = "naming_rules"
+    }
+}
+
+private struct MuniReglesBundlePayload: Codable, Sendable {
+    let manifest: MuniReglesBundleManifestPayload
+    let namingAndRoutingRules: MuniReglesNamingAndRoutingRulesPayload
+
+    enum CodingKeys: String, CodingKey {
+        case manifest
+        case namingAndRoutingRules = "naming_and_routing_rules"
+    }
+}
+
+private struct MuniReglesTraceContext: Sendable {
+    let source: String
+    let bundleVersion: String?
+    let moduleVersion: String?
+    let ruleID: String?
+    let fallbackReason: String?
+}
+
 private struct CanonicalExecutionContext: Sendable {
     let action: CanonicalAction
     let preset: RenamePreset
@@ -66,6 +106,7 @@ private struct CanonicalExecutionContext: Sendable {
     let includeHidden: Bool
     let dryRun: Bool
     let confirmApply: Bool
+    let reglesTrace: MuniReglesTraceContext
 }
 
 public enum CanonicalRunAdapter {
@@ -115,10 +156,13 @@ public enum CanonicalRunAdapter {
                     finishedAt: finishedAt,
                     summary: "Preset validation succeeded.",
                     errors: [],
-                    metadata: [
+                    metadata: withReglesTraceMetadata(
+                        [
                         "action": .string("validate-preset"),
                         "issue_count": .number(0)
-                    ]
+                        ],
+                        context: context
+                    )
                 )
             }
 
@@ -135,7 +179,8 @@ public enum CanonicalRunAdapter {
                 startedAt: startedAt,
                 finishedAt: finishedAt,
                 errors: errors,
-                summary: "Preset validation failed."
+                summary: "Preset validation failed.",
+                additionalMetadata: withReglesTraceMetadata([:], context: context)
             )
         }
 
@@ -154,7 +199,8 @@ public enum CanonicalRunAdapter {
                 startedAt: startedAt,
                 finishedAt: finishedAt,
                 errors: errors,
-                summary: "Preset is invalid for execution."
+                summary: "Preset is invalid for execution.",
+                additionalMetadata: withReglesTraceMetadata([:], context: context)
             )
         }
 
@@ -189,12 +235,15 @@ public enum CanonicalRunAdapter {
                 finishedAt: finishedAt,
                 summary: summary,
                 errors: [],
-                metadata: [
+                metadata: withReglesTraceMetadata(
+                    [
                     "action": .string(context.action.rawValue),
                     "dry_run": .bool(context.dryRun),
                     "files_analyzed": .number(Double(items.count)),
                     "warning_count": .number(Double(warningCount))
-                ]
+                    ],
+                    context: context
+                )
             )
         }
 
@@ -224,7 +273,8 @@ public enum CanonicalRunAdapter {
                 startedAt: startedAt,
                 finishedAt: finishedAt,
                 errors: operationErrors.isEmpty ? [CanonicalRunAdapterError.runtimeFailure("Rename apply failed.").toolError] : operationErrors,
-                summary: "Apply completed with errors."
+                summary: "Apply completed with errors.",
+                additionalMetadata: withReglesTraceMetadata([:], context: context)
             )
         }
 
@@ -235,19 +285,23 @@ public enum CanonicalRunAdapter {
             finishedAt: finishedAt,
             summary: "Apply completed successfully.",
             errors: [],
-            metadata: [
+            metadata: withReglesTraceMetadata(
+                [
                 "action": .string("apply"),
                 "dry_run": .bool(false),
                 "files_analyzed": .number(Double(items.count)),
                 "renamed_count": .number(Double(report.renamedCount)),
                 "error_count": .number(Double(report.errorCount)),
                 "warning_count": .number(Double(warningCount))
-            ]
+                ],
+                context: context
+            )
         )
     }
 
     private static func parseContext(from request: ToolRequest) throws -> CanonicalExecutionContext {
         let action = try parseAction(request.action)
+        let reglesTrace = try resolveMuniReglesTrace(from: request)
 
         let presetPath = try requiredStringParameter("preset_path", in: request)
         let presetURL = URL(fileURLWithPath: presetPath)
@@ -284,7 +338,8 @@ public enum CanonicalRunAdapter {
             recursive: recursive,
             includeHidden: includeHidden,
             dryRun: dryRun,
-            confirmApply: confirmApply
+            confirmApply: confirmApply,
+            reglesTrace: reglesTrace
         )
     }
 
@@ -311,6 +366,20 @@ public enum CanonicalRunAdapter {
             throw CanonicalRunAdapterError.missingParameter(key)
         }
         return value
+    }
+
+    private static func optionalRawStringParameter(_ key: String, in request: ToolRequest) throws -> String? {
+        guard let value = request.parameters[key] else {
+            return nil
+        }
+
+        switch value {
+        case .string(let stringValue):
+            let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        default:
+            throw CanonicalRunAdapterError.invalidParameter(key, "expected string")
+        }
     }
 
     private static func optionalStringParameter(_ key: String, in request: ToolRequest) throws -> String? {
@@ -341,6 +410,115 @@ public enum CanonicalRunAdapter {
         default:
             throw CanonicalRunAdapterError.invalidParameter(key, "expected boolean")
         }
+    }
+
+    private static func resolveMuniReglesTrace(from request: ToolRequest) throws -> MuniReglesTraceContext {
+        let requestedRuleID = try optionalRawStringParameter("regles_naming_rule_id", in: request)
+        let bundlePath = try resolveMuniReglesBundlePath(from: request)
+
+        guard let bundlePath else {
+            return MuniReglesTraceContext(
+                source: "fallback_local",
+                bundleVersion: nil,
+                moduleVersion: nil,
+                ruleID: requestedRuleID,
+                fallbackReason: nil
+            )
+        }
+
+        guard let bundle = try? parseMuniReglesBundle(fromPath: bundlePath) else {
+            return MuniReglesTraceContext(
+                source: "fallback_local",
+                bundleVersion: nil,
+                moduleVersion: nil,
+                ruleID: requestedRuleID,
+                fallbackReason: "bundle_unreadable_or_invalid"
+            )
+        }
+
+        let namingRuleIDs = Set(bundle.namingAndRoutingRules.namingRules.map { $0.id })
+        guard !namingRuleIDs.isEmpty else {
+            return MuniReglesTraceContext(
+                source: "fallback_local",
+                bundleVersion: normalizeNonEmpty(bundle.manifest.bundleVersion),
+                moduleVersion: normalizeNonEmpty(bundle.manifest.moduleVersion),
+                ruleID: requestedRuleID,
+                fallbackReason: "bundle_contains_no_naming_rules"
+            )
+        }
+
+        if let requestedRuleID, !namingRuleIDs.contains(requestedRuleID) {
+            return MuniReglesTraceContext(
+                source: "fallback_local",
+                bundleVersion: normalizeNonEmpty(bundle.manifest.bundleVersion),
+                moduleVersion: normalizeNonEmpty(bundle.manifest.moduleVersion),
+                ruleID: requestedRuleID,
+                fallbackReason: "rule_not_found_in_bundle"
+            )
+        }
+
+        return MuniReglesTraceContext(
+            source: "muniregles_bundle",
+            bundleVersion: normalizeNonEmpty(bundle.manifest.bundleVersion),
+            moduleVersion: normalizeNonEmpty(bundle.manifest.moduleVersion),
+            ruleID: requestedRuleID,
+            fallbackReason: nil
+        )
+    }
+
+    private static func resolveMuniReglesBundlePath(from request: ToolRequest) throws -> String? {
+        if let explicit = try optionalStringParameter("regles_bundle_path", in: request) {
+            return explicit
+        }
+
+        if let legacy = try optionalStringParameter("bundle_path", in: request) {
+            return legacy
+        }
+
+        let bundleArtifactIDs: Set<String> = ["regles_bundle", "bundle"]
+        if let artifact = request.inputArtifacts.first(where: { bundleArtifactIDs.contains($0.id.lowercased()) }) {
+            let resolved = resolvePathFromURIOrPath(artifact.uri)
+            let trimmed = resolved.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+
+        return nil
+    }
+
+    private static func parseMuniReglesBundle(fromPath path: String) throws -> MuniReglesBundlePayload {
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        return try JSONDecoder().decode(MuniReglesBundlePayload.self, from: data)
+    }
+
+    private static func normalizeNonEmpty(_ value: String?) -> String? {
+        guard let value else {
+            return nil
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private static func withReglesTraceMetadata(
+        _ metadata: [String: JSONValue],
+        context: CanonicalExecutionContext
+    ) -> [String: JSONValue] {
+        var merged = metadata
+        merged["regles_source"] = .string(context.reglesTrace.source)
+
+        if let bundleVersion = context.reglesTrace.bundleVersion {
+            merged["regles_bundle_version"] = .string(bundleVersion)
+        }
+        if let moduleVersion = context.reglesTrace.moduleVersion {
+            merged["regles_module_version"] = .string(moduleVersion)
+        }
+        if let ruleID = context.reglesTrace.ruleID {
+            merged["regles_rule_id"] = .string(ruleID)
+        }
+        if let fallbackReason = context.reglesTrace.fallbackReason {
+            merged["regles_fallback_reason"] = .string(fallbackReason)
+        }
+
+        return merged
     }
 
     private static func makeResult(
@@ -390,18 +568,22 @@ public enum CanonicalRunAdapter {
         startedAt: String,
         finishedAt: String,
         errors: [ToolError],
-        summary: String
+        summary: String,
+        additionalMetadata: [String: JSONValue] = [:]
     ) -> ToolResult {
-        makeResult(
+        var metadata: [String: JSONValue] = ["action": .string(request.action)]
+        for (key, value) in additionalMetadata {
+            metadata[key] = value
+        }
+
+        return makeResult(
             request: request,
             status: .failed,
             startedAt: startedAt,
             finishedAt: finishedAt,
             summary: summary,
             errors: errors,
-            metadata: [
-                "action": .string(request.action)
-            ]
+            metadata: metadata
         )
     }
 
